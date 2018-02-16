@@ -42,8 +42,8 @@ object Lab3 extends JsyApplication with Lab3Like {
     require(isValue(v))
     (v: @unchecked) match {
       case N(n) => n
-      case B(false) => 0
       case B(true) => 1
+      case B(false) => 0
       case Undefined => Double.NaN
       case S(s) => try s.toDouble catch {case _: NumberFormatException => Double.NaN}
       case Function(_, _, _) => Double.NaN
@@ -53,11 +53,11 @@ object Lab3 extends JsyApplication with Lab3Like {
   def toBoolean(v: Expr): Boolean = {
     require(isValue(v))
     (v: @unchecked) match {
-      case B(b) => b
       case N(n) => if (n == 0 || n == -0 || n.isNaN) false else true
+      case B(b) => b
+      case Undefined => false
       case S("") => false
       case S(_) => true
-      case Undefined => false
       case Function(_, _, _) => true
     }
   }
@@ -65,10 +65,11 @@ object Lab3 extends JsyApplication with Lab3Like {
   def toStr(v: Expr): String = {
     require(isValue(v))
     (v: @unchecked) match {
-      case S(s) => s
       case N(n) => pretty(N(n))
-      case B(b) => pretty(B(b))
+      case B(true) => "true"
+      case B(false) => "false"
       case Undefined => "undefined"
+      case S(s) => s
         // Here in toStr(Function(_, _, _)), we will deviate from Node.js that returns the concrete syntax
         // of the function (from the input program).
       case Function(_, _, _) => "function"
