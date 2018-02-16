@@ -88,7 +88,18 @@ object Lab3 extends JsyApplication with Lab3Like {
     require(isValue(v2))
     require(bop == Lt || bop == Le || bop == Gt || bop == Ge)
     (v1, v2) match {
-      case _ => ??? // delete this line when done
+      case (S(s1), S(s2)) => bop match {
+        case Lt => s1 < s2
+        case Le => s1 <= s2
+        case Gt => s1 > s2
+        case Ge => s1 >= s2
+      }
+      case _ => bop match {
+        case Lt => toNumber(v1) < toNumber(v2)
+        case Le => toNumber(v1) <= toNumber(v2)
+        case Gt => toNumber(v1) > toNumber(v2)
+        case Ge => toNumber(v1) >= toNumber(v2)
+      }
     }
   }
 
@@ -102,13 +113,59 @@ object Lab3 extends JsyApplication with Lab3Like {
     e match {
       /* Base Cases */
       case N(_) | B(_) | S(_) | Undefined | Function(_, _, _) => e
-      case Var(x) => ???
+      case Var(x) => lookup(env,x)
       
       /* Inductive Cases */
       case Print(e1) => println(pretty(eval(env, e1))); Undefined
 
-        // ****** Your cases here
+      case ConstDecl(x,e1,e2) => {
+        val v = eval(env, e1)
+        eval(extend(env, x, v), e2)
+      }
 
+      case Unary(uop, e1) => uop match {
+        case Neg => N(-toNumber(eval(env,e1)))
+        case Not => B(!toBoolean(eval(env,e1)))
+      }
+
+      case Binary(bop, e1, e2) => bop match {
+        case Seq => eval(env,e1);eval(env,e2)
+
+        case Plus => (eval(env,e1),eval(env,e2)) match {
+          case (S(e1), e2) => S(e1 + toStr(eval(env,e2)))
+          case (e1, S(e2)) => S(toStr(eval(env,e1)) + e2)
+          case _ => N(toNumber(eval(env, e1)) + toNumber(eval(env,e2)))
+        }
+
+        case Minus => N(toNumber(eval(env, e1)) - toNumber(eval(env, e2)))
+        case Times => N(toNumber(eval(env, e1)) * toNumber(eval(env, e2)))
+        case Div => N(toNumber(eval(env, e1)) / toNumber(eval(env, e2)))
+
+
+        case Eq => (eval(env,e1),eval(env,e2)) match {
+          case (Function(_, _, _), _) => throw new DynamicTypeError(e)
+          case (_, Function(_, _, _)) => throw new DynamicTypeError(e)
+          case _ => B(eval(env, e1) == eval(env, e2))
+        }
+
+        case Ne => (eval(env,e1),eval(env,e2)) match {
+          case (Function(_, _, _), _) => throw new DynamicTypeError(e)
+          case (_, Function(_, _, _)) => throw new DynamicTypeError(e)
+          case _ => B(eval(env, e1) != eval(env, e2))
+        }
+
+        case (Lt|Le|Gt|Ge) => B(inequalityVal(bop,eval(env,e1),eval(env,e2)))
+
+        //Logical AND. "Returns expr1 if it can be converted to false; otherwise, returns expr2.
+        // Thus, when used with Boolean values, && returns true if both operands are true; otherwise, returns false."
+        case And =>
+          if (toBoolean(eval(env,e1))) eval(env,e2) else eval(env,e1)
+
+        //Logical OR. "Returns expr1 if it can be converted to true; otherwise, returns expr2.
+        // Thus, when used with Boolean values, || returns true if either operand is true."
+        case Or =>
+          if (toBoolean(eval(env,e1))) eval(env,e1) else eval(env,e2)
+      }
       case Call(e1, e2) => ???
       case _ => ??? // delete this line when done
     }
