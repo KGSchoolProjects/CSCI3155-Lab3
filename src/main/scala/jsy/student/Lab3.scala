@@ -189,14 +189,23 @@ object Lab3 extends JsyApplication with Lab3Like {
     e match {
       case N(_) | B(_) | Undefined | S(_) => e
       case Print(e1) => Print(substitute(e1, v, x))
-      case Unary(uop, e1) => ???
-      case Binary(bop, e1, e2) => ???
-      case If(e1, e2, e3) => ???
-      case Call(e1, e2) => ???
-      case Var(y) => ???
-      case Function(None, y, e1) => ???
-      case Function(Some(y1), y2, e1) => ???
-      case ConstDecl(y, e1, e2) => ???
+      case Unary(uop, e1) => Unary(uop,substitute(e1,v,x))
+      case Binary(bop, e1, e2) => Binary(bop,substitute(e1,v,x),substitute(e2,v,x))
+      case If(e1, e2, e3) => If(substitute(e1,v,x),substitute(e2,v,x),substitute(e3,v,x))
+      case Call(e1, e2) => Call(substitute(e1,v,x),substitute(e2,v,x))
+      case Var(y) => if (x == y) v else Var(y)
+
+      case Function(None, y, e1) =>
+        if (x == y) Function(None,y,e1)
+        else Function(None,y,substitute(e1,v,x))
+
+      case Function(Some(y1), y2, e1) =>
+        if (x == y2 || y1.contains(x)) Function(Some(y1),y2,e1)
+        else Function(Some(y1),y2,substitute(e1,v,x))
+
+      case ConstDecl(y, e1, e2) =>
+        if (x == y) ConstDecl(y,substitute(e1,v,x),e2)
+        else ConstDecl(y,substitute(e1,v,x),substitute(e2,v,x))
     }
   }
     
