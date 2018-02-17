@@ -118,10 +118,9 @@ object Lab3 extends JsyApplication with Lab3Like {
       /* Inductive Cases */
       case Print(e1) => println(pretty(eval(env, e1))); Undefined
 
-      case ConstDecl(x,e1,e2) => {
+      case ConstDecl(x,e1,e2) =>
         val v = eval(env, e1)
         eval(extend(env, x, v), e2)
-      }
 
       case Unary(uop, e1) => uop match {
         case Neg => N(-toNumber(eval(env,e1)))
@@ -132,8 +131,8 @@ object Lab3 extends JsyApplication with Lab3Like {
         case Seq => eval(env,e1);eval(env,e2)
 
         case Plus => (eval(env,e1),eval(env,e2)) match {
-          case (S(e1), e2) => S(e1 + toStr(eval(env,e2)))
-          case (e1, S(e2)) => S(toStr(eval(env,e1)) + e2)
+          case (S(s1), s2) => S(s1 + toStr(eval(env,s2)))
+          case (s1, S(s2)) => S(toStr(eval(env,s1)) + s2)
           case _ => N(toNumber(eval(env, e1)) + toNumber(eval(env,e2)))
         }
 
@@ -143,14 +142,14 @@ object Lab3 extends JsyApplication with Lab3Like {
 
 
         case Eq => (eval(env,e1),eval(env,e2)) match {
-          case (Function(_, _, _), _) => throw new DynamicTypeError(e)
-          case (_, Function(_, _, _)) => throw new DynamicTypeError(e)
+          case (Function(_, _, _), _) => throw DynamicTypeError(e)
+          case (_, Function(_, _, _)) => throw DynamicTypeError(e)
           case _ => B(eval(env, e1) == eval(env, e2))
         }
 
         case Ne => (eval(env,e1),eval(env,e2)) match {
-          case (Function(_, _, _), _) => throw new DynamicTypeError(e)
-          case (_, Function(_, _, _)) => throw new DynamicTypeError(e)
+          case (Function(_, _, _), _) => throw DynamicTypeError(e)
+          case (_, Function(_, _, _)) => throw DynamicTypeError(e)
           case _ => B(eval(env, e1) != eval(env, e2))
         }
 
@@ -166,8 +165,11 @@ object Lab3 extends JsyApplication with Lab3Like {
         case Or =>
           if (toBoolean(eval(env,e1))) eval(env,e1) else eval(env,e2)
       }
-      case Call(e1, e2) => ???
-      case _ => ??? // delete this line when done
+      case Call(e1, e2) => (eval(env,e1),eval(env,e2)) match {
+        case (v2 @ Function(Some(p),x,expression),v1) => eval(extend(extend(env,x,v1), p, v2), expression)
+        case (Function(None,x,expression),v1) => eval(extend(env,x,v1),expression)
+        case (_,_) => throw DynamicTypeError(e)
+      }
     }
   }
     
