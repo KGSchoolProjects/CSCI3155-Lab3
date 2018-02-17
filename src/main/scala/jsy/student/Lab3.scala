@@ -177,7 +177,10 @@ object Lab3 extends JsyApplication with Lab3Like {
   /* Small-Step Interpreter with Static Scoping */
 
   def iterate(e0: Expr)(next: (Expr, Int) => Option[Expr]): Expr = {
-    def loop(e: Expr, n: Int): Expr = ???
+    def loop(e: Expr, n: Int): Expr = next(e, n) match {
+      case None => e
+      case Some(e1) => loop(e1, n+1)
+    }
     loop(e0, 0)
   }
   
