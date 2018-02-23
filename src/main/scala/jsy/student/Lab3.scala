@@ -165,6 +165,10 @@ object Lab3 extends JsyApplication with Lab3Like {
         case Or =>
           if (toBoolean(eval(env,e1))) eval(env,e1) else eval(env,e2)
       }
+
+      case If(e1,e2,e3) =>
+        if (toBoolean(eval(env,e1))) eval(env,e2) else eval(env,e3)
+
       case Call(e1, e2) => (eval(env,e1),eval(env,e2)) match {
         case (v2 @ Function(Some(p),x,expression),v1) => eval(extend(extend(env,x,v1), p, v2), expression)
         case (Function(None,x,expression),v1) => eval(extend(env,x,v1),expression)
@@ -215,12 +219,60 @@ object Lab3 extends JsyApplication with Lab3Like {
       case Print(v1) if isValue(v1) => println(pretty(v1)); Undefined
       
         // ****** Your cases here
-      
+        //DoNeg & DoNot
+      case Unary(uop, v1) if isValue(v1) => uop match {
+        case Neg => N(-toNumber(v1))
+        case Not => B(!toBoolean(v1))
+      }
+        //DoSeq
+      case Binary(Seq, v1, e2) if isValue(v1) => e2
+
+        //DoAnd
+      case Binary(And, v1, e2) if isValue(v1) => if (toBoolean(v1)) e2 else B(false)
+
+        //DoOr
+      case Binary(Or, v1, e2) if isValue(v1) => if (toBoolean(v1)) B(true) else e2
+
+        //DoArith & DoInequality & DoEquality
+      case Binary(bop, v1, v2) if isValue(v1) && isValue(v2) => bop match {
+        case Plus => N(toNumber(v1)+toNumber(v2))
+        case Minus => N(toNumber(v1)-toNumber(v2))
+        case Times => N(toNumber(v1)*toNumber(v2))
+        case Div => N(toNumber(v1)/toNumber(v2))
+
+          //DoInequality
+        case (Lt|Le|Gt|Ge) => B(inequalityVal(bop,v1,v2))
+
+          //DoEquality
+        case Eq => B(v1 == v2)
+        case Ne => B(v1 != v2)
+      }
+
+        //DoIf
+      case If(v1, e2, e3) if isValue(v1) => if (toBoolean(v1)) e2 else e3
+
+      //DoConst
+      case ConstDecl(x, v1, e2) if isValue(v1) => substitute(e2, v1, x)
+
       /* Inductive Cases: Search Rules */
       case Print(e1) => Print(step(e1))
-      
-        // ****** Your cases here
 
+      // ****** Your cases here
+        //SearchUnary
+      case Unary(uop,e1) => Unary(uop, step(e1))
+
+        //SearchBinary2
+      case Binary(bop, v1, e2) if isValue(v1) => Binary(bop, v1, step(e2))
+
+        //SearchBinary1
+      case Binary(bop, e1, e2) => Binary(bop, step(e1), e2)
+
+        //SearchIf
+      case If(e1, e2, e3) => If(step(e1), e2, e3)
+
+        //SearchConst
+      case ConstDecl(x, e1, e2) => ConstDecl(x, step(e1), e2)
+        //
       /* Cases that should never match. Your cases above should ensure this. */
       case Var(_) => throw new AssertionError("Gremlins: internal error, not closed expression.")
       case N(_) | B(_) | Undefined | S(_) | Function(_, _, _) => throw new AssertionError("Gremlins: internal error, step should not be called on values.");
