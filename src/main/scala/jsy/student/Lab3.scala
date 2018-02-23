@@ -254,6 +254,13 @@ object Lab3 extends JsyApplication with Lab3Like {
       //DoConst
       case ConstDecl(x, v1, e2) if isValue(v1) => substitute(e2, v1, x)
 
+        //Call
+      case Call(e1, v2) if isValue(e1) && isValue(v2) => e1 match {
+        case Function(None, x, expression) => substitute(expression, v2, x)
+        case Function(Some(p), x, expression) => substitute(substitute(expression, e1, p),v2,x)
+        case _ => throw DynamicTypeError(e)
+      }
+
       /* Inductive Cases: Search Rules */
       case Print(e1) => Print(step(e1))
 
@@ -272,6 +279,16 @@ object Lab3 extends JsyApplication with Lab3Like {
 
         //SearchConst
       case ConstDecl(x, e1, e2) => ConstDecl(x, step(e1), e2)
+
+        //SearchCall 2
+      case Call(e1, e2) if isValue(e1) => e1 match {
+        case Function(None, x, expression) => substitute(expression, step(e2), x)
+        case Function(Some(p), x, expression) => substitute(substitute(expression, e1, p), step(e2), x)
+        case _ => throw DynamicTypeError(e)
+      }
+
+        //SearchCall 1
+      case Call(e1, e2) => Call(step(e1), e2)
         //
       /* Cases that should never match. Your cases above should ensure this. */
       case Var(_) => throw new AssertionError("Gremlins: internal error, not closed expression.")
