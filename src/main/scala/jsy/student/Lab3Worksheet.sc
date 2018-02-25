@@ -22,3 +22,7 @@ parse("function id(x) { return x }")
 parse("x => y => x + y")
 parse("x => { const z = 3; return x + z }")
 parse("function (x) { const z = 3; return x + z }")
+
+val myFields:Map[String, Expr] = Map.empty
+iterateStep(parse("const x = 10; const f = function(w) {return x;} const g = function(q) {const x = 20; return f(2);} console.log(g(1));"))
+eval(myFields,parse("const x = 10; const f = function(w) {return x;} const g = function(q) {const x = 20; return f(2);} console.log(g(1));"))
